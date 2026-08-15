@@ -79,13 +79,13 @@ export default function Home() {
                 Create student account
                 <ArrowRight className="h-4 w-4" />
               </Link>
-              {/* <Link
+              <Link
                 href="/verify"
                 className="inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-zinc-300 px-6 text-base font-semibold text-zinc-700 transition-colors hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800"
               >
                 <Search className="h-4 w-4" />
                 Verify a graduate
-              </Link> */}
+              </Link>
             </div>
           </div>
         </section>
