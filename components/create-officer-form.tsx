@@ -1,11 +1,5 @@
 "use client";
 
-import { useActionState } from "react";
-import { createOfficerAction, type AdminFormState } from "@/app/actions/admin";
-import { Field, ErrorBanner, SuccessBanner, inputClass, submitClass } from "./ui";
-
-const initialState: AdminFormState = {};
-
 import { useState } from "react";
 import { useActionState } from "react";
 import { createOfficerAction, type AdminFormState } from "@/app/actions/admin";
@@ -13,7 +7,13 @@ import { Field, ErrorBanner, SuccessBanner, inputClass, submitClass } from "./ui
 
 const initialState: AdminFormState = {};
 
-export function CreateOfficerForm({ availableStages, availableDepartments }: { availableStages: { code: string; name: string }[]; availableDepartments?: { id: string; name: string }[] }) {
+export function CreateOfficerForm({
+  availableStages,
+  availableDepartments,
+}: {
+  availableStages: { code: string; name: string }[];
+  availableDepartments?: { id: string; name: string }[];
+}) {
   const [state, formAction, isPending] = useActionState(createOfficerAction, initialState);
   const [selectedStage, setSelectedStage] = useState<string>("");
 
@@ -23,11 +23,24 @@ export function CreateOfficerForm({ availableStages, availableDepartments }: { a
       <SuccessBanner message={state.success ? "Officer account created." : undefined} />
 
       <Field label="Full name" htmlFor="of-fullName">
-        <input id="of-fullName" name="fullName" required className={inputClass} placeholder="e.g. Dr. Amina Yusuf" />
+        <input
+          id="of-fullName"
+          name="fullName"
+          required
+          className={inputClass}
+          placeholder="e.g. Dr. Amina Yusuf"
+        />
       </Field>
 
       <Field label="Email address" htmlFor="of-email">
-        <input id="of-email" name="email" type="email" required className={inputClass} placeholder="officer@example.edu" />
+        <input
+          id="of-email"
+          name="email"
+          type="email"
+          required
+          className={inputClass}
+          placeholder="officer@example.edu"
+        />
       </Field>
 
       <Field label="Temporary password" htmlFor="of-password">
@@ -52,7 +65,7 @@ export function CreateOfficerForm({ availableStages, availableDepartments }: { a
           onChange={(e) => setSelectedStage(e.target.value)}
         >
           <option value="" disabled>
-            Select an unassigned stage
+            Select a clearance stage
           </option>
           {availableStages.map((stage) => (
             <option key={stage.code} value={stage.code}>
@@ -64,7 +77,13 @@ export function CreateOfficerForm({ availableStages, availableDepartments }: { a
 
       {selectedStage === "department" && (
         <Field label="Department" htmlFor="of-department">
-          <select id="of-department" name="departmentId" required className={inputClass}>
+          <select
+            id="of-department"
+            name="departmentId"
+            required
+            defaultValue=""
+            className={inputClass}
+          >
             <option value="" disabled>
               Select department
             </option>

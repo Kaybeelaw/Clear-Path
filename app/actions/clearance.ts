@@ -12,6 +12,35 @@ async function getOfficerForSession(userId: string) {
   return prisma.officer.findUnique({ where: { userId } });
 }
 
+/** Check whether an officer is allowed to act on a given clearance item.
+ *  - Stage must match the officer's stage.
+ *  - For department-stage officers, the student's department must also match. */
+async function officerCanActOnItem(
+  officerStageCode: string,
+  officerDepartmentId: string | null,
+  itemId: string,
+): Promise<{ allowed: boolean; error?: string }> {
+  const item = await prisma.clearanceItem.findUnique({
+    where: { id: itemId },
+    include: {
+      record: { include: { student: { select: { departmentId: true } } } },
+      _count: { select: { documents: true } },
+    },
+  });
+
+  if (!item) return { allowed: false, error: "Clearance item not found." };
+  if (item.stageCode !== officerStageCode) return { allowed: false, error: "This item is not assigned to your office." };
+
+  // For department-stage officers, enforce department scoping
+  if (officerStageCode === "department" && officerDepartmentId) {
+    if (item.record.student.departmentId !== officerDepartmentId) {
+      return { allowed: false, error: "This item is not assigned to your office." };
+    }
+  }
+
+  return { allowed: true };
+}
+
 export async function approveItemAction(
   _prevState: ActionState,
   formData: FormData,
@@ -23,12 +52,18 @@ export async function approveItemAction(
   const officer = await getOfficerForSession(session.userId);
   if (!officer) return { error: "Officer profile not found." };
 
+  const { allowed, error } = await officerCanActOnItem(
+    officer.stageCode,
+    officer.departmentId,
+    parsed.data.itemId,
+  );
+  if (!allowed) return { error };
+
   const item = await prisma.clearanceItem.findUnique({
     where: { id: parsed.data.itemId },
     include: { _count: { select: { documents: true } } },
   });
   if (!item) return { error: "Clearance item not found." };
-  if (item.stageCode !== officer.stageCode) return { error: "This item is not assigned to your office." };
   if (item.status !== "PENDING") return { error: "This item has already been decided." };
   if (item._count.documents === 0) {
     return { error: "No supporting document has been uploaded for this stage yet. Please wait for the student to attach evidence." };
@@ -56,9 +91,15 @@ export async function rejectItemAction(
   const officer = await getOfficerForSession(session.userId);
   if (!officer) return { error: "Officer profile not found." };
 
+  const { allowed, error } = await officerCanActOnItem(
+    officer.stageCode,
+    officer.departmentId,
+    parsed.data.itemId,
+  );
+  if (!allowed) return { error };
+
   const item = await prisma.clearanceItem.findUnique({ where: { id: parsed.data.itemId } });
   if (!item) return { error: "Clearance item not found." };
-  if (item.stageCode !== officer.stageCode) return { error: "This item is not assigned to your office." };
   if (item.status !== "PENDING") return { error: "This item has already been decided." };
 
   await prisma.clearanceItem.update({

@@ -23,14 +23,9 @@ export async function createOfficerAction(
   const existingUser = await prisma.user.findUnique({ where: { email } });
   if (existingUser) return { error: "An account with this email already exists." };
 
-  // Validate uniqueness: for department stage, uniqueness is per-department; for other stages, departmentId must be null and stage unique
-  if (stageCode === "department") {
-    if (!departmentId) return { error: "Department is required for department-stage officers." };
-    const existingOfficer = await prisma.officer.findFirst({ where: { stageCode, departmentId } });
-    if (existingOfficer) return { error: "An officer for this department already exists." };
-  } else {
-    const existingOfficer = await prisma.officer.findFirst({ where: { stageCode, departmentId: null } });
-    if (existingOfficer) return { error: "This stage already has an assigned officer." };
+  // Department-stage officers must be linked to a specific department
+  if (stageCode === "department" && !departmentId) {
+    return { error: "Department is required for department-stage officers." };
   }
 
   const passwordHash = await hash(password, 12);

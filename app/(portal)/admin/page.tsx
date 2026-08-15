@@ -27,10 +27,7 @@ export default async function AdminPage() {
     prisma.department.findMany({ orderBy: { name: "asc" } }),
   ]);
 
-  const assignedStages = new Set(officers.map((officer) => officer.stageCode));
-  const availableStages = CLEARANCE_STAGES.filter((stage) => !assignedStages.has(stage.code)).map(
-    (stage) => ({ code: stage.code, name: stage.name }),
-  );
+  const availableStages = CLEARANCE_STAGES.map((stage) => ({ code: stage.code, name: stage.name }));
   const availableDepartments = departments.map((d) => ({ id: d.id, name: d.name }));
 
   const stats = [

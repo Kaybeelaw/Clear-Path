@@ -15,7 +15,12 @@ export default async function OfficerPage() {
   if (!officer) redirect("/dashboard");
 
   const items = await prisma.clearanceItem.findMany({
-    where: { stageCode: officer.stageCode },
+    where: {
+      stageCode: officer.stageCode,
+      ...(officer.departmentId
+        ? { record: { student: { departmentId: officer.departmentId } } }
+        : {}),
+    },
     orderBy: { createdAt: "desc" },
     include: {
       record: { include: { student: { include: { user: { select: { fullName: true } } } } } },
