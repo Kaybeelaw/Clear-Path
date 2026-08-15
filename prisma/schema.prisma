@@ -1,0 +1,118 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  STUDENT
+  OFFICER
+  ADMIN
+}
+
+enum StageStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum RecordStatus {
+  IN_PROGRESS
+  COMPLETE
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  fullName     String
+  role         Role     @default(STUDENT)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  student Student?
+  officer Officer?
+
+  @@index([role])
+}
+
+model Student {
+  id         String   @id @default(cuid())
+  userId     String   @unique
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  matricNo   String   @unique
+  faculty    String
+  department String
+  level      String
+  program    String
+
+  records   ClearanceRecord[]
+  documents Document[]
+
+  @@index([matricNo])
+}
+
+model Officer {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stageCode String   @unique
+  stageName String
+
+  items ClearanceItem[]
+
+  @@index([stageCode])
+}
+
+model ClearanceRecord {
+  id          String       @id @default(cuid())
+  studentId   String
+  student     Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  status      RecordStatus @default(IN_PROGRESS)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  completedAt DateTime?
+
+  items ClearanceItem[]
+
+  @@index([studentId])
+}
+
+model ClearanceItem {
+  id         String         @id @default(cuid())
+  recordId   String
+  record     ClearanceRecord @relation(fields: [recordId], references: [id], onDelete: Cascade)
+  stageCode  String
+  stageName  String
+  stageOrder Int
+  status     StageStatus    @default(PENDING)
+  officerId  String?
+  officer    Officer?       @relation(fields: [officerId], references: [id], onDelete: SetNull)
+  comment    String?
+  actedAt    DateTime?
+  createdAt  DateTime       @default(now())
+
+  @@unique([recordId, stageCode])
+  @@index([stageCode, status])
+
+  documents Document[]
+}
+
+model Document {
+  id           String        @id @default(cuid())
+  itemId       String
+  item         ClearanceItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  studentId    String
+  student      Student       @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  originalName String
+  storedName   String
+  mimeType     String
+  sizeBytes    Int
+  createdAt    DateTime      @default(now())
+
+  @@index([itemId])
+  @@index([studentId])
+}
