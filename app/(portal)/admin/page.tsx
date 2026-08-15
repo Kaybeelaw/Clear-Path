@@ -11,7 +11,7 @@ export const metadata: Metadata = { title: "Administration" };
 export default async function AdminPage() {
   await requireRole("ADMIN");
 
-  const [totalStudents, inProgress, complete, records, officers] = await Promise.all([
+  const [totalStudents, inProgress, complete, records, officers, departments] = await Promise.all([
     prisma.student.count(),
     prisma.clearanceRecord.count({ where: { status: "IN_PROGRESS" } }),
     prisma.clearanceRecord.count({ where: { status: "COMPLETE" } }),
@@ -24,12 +24,14 @@ export default async function AdminPage() {
       },
     }),
     prisma.officer.findMany({ include: { user: { select: { fullName: true, email: true } } } }),
+    prisma.department.findMany({ orderBy: { name: "asc" } }),
   ]);
 
   const assignedStages = new Set(officers.map((officer) => officer.stageCode));
   const availableStages = CLEARANCE_STAGES.filter((stage) => !assignedStages.has(stage.code)).map(
     (stage) => ({ code: stage.code, name: stage.name }),
   );
+  const availableDepartments = departments.map((d) => ({ id: d.id, name: d.name }));
 
   const stats = [
     { label: "Registered students", value: totalStudents, icon: Users },
@@ -114,7 +116,7 @@ export default async function AdminPage() {
             <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Create officer account</h2>
           </div>
           <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-            <CreateOfficerForm availableStages={availableStages} />
+            <CreateOfficerForm availableStages={availableStages} availableDepartments={availableDepartments} />
           </div>
         </section>
 

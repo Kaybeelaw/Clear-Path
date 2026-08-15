@@ -8,7 +8,7 @@ const initialState: AuthFormState = {};
 
 const LEVELS = ["100", "200", "300", "400", "500"];
 
-export function RegisterForm() {
+export function RegisterForm({ departments }: { departments?: { id: string; name: string }[] }) {
   const [state, formAction, isPending] = useActionState(registerAction, initialState);
 
   return (
@@ -56,14 +56,17 @@ export function RegisterForm() {
           <input id="faculty" name="faculty" required className={inputClass} placeholder="e.g. Science" />
         </Field>
 
-        <Field label="Department" htmlFor="department" error={state.fieldErrors?.department?.[0]}>
-          <input
-            id="department"
-            name="department"
-            required
-            className={inputClass}
-            placeholder="e.g. Computer Science"
-          />
+        <Field label="Department" htmlFor="department" error={state.fieldErrors?.departmentId?.[0]}>
+          <select id="department" name="departmentId" required className={inputClass} defaultValue="">
+            <option value="" disabled>
+              Select department
+            </option>
+            {departments?.map((d) => (
+              <option key={d.id} value={d.id}>
+                {d.name}
+              </option>
+            ))}
+          </select>
         </Field>
       </div>
 

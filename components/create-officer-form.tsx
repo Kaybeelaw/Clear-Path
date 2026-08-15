@@ -13,7 +13,7 @@ import { Field, ErrorBanner, SuccessBanner, inputClass, submitClass } from "./ui
 
 const initialState: AdminFormState = {};
 
-export function CreateOfficerForm({ availableStages }: { availableStages: { code: string; name: string }[] }) {
+export function CreateOfficerForm({ availableStages, availableDepartments }: { availableStages: { code: string; name: string }[]; availableDepartments?: { id: string; name: string }[] }) {
   const [state, formAction, isPending] = useActionState(createOfficerAction, initialState);
   const [selectedStage, setSelectedStage] = useState<string>("");
 
@@ -64,7 +64,16 @@ export function CreateOfficerForm({ availableStages }: { availableStages: { code
 
       {selectedStage === "department" && (
         <Field label="Department" htmlFor="of-department">
-          <input id="of-department" name="department" required className={inputClass} placeholder="e.g. Computer Science" />
+          <select id="of-department" name="departmentId" required className={inputClass}>
+            <option value="" disabled>
+              Select department
+            </option>
+            {availableDepartments?.map((d) => (
+              <option key={d.id} value={d.id}>
+                {d.name}
+              </option>
+            ))}
+          </select>
         </Field>
       )}
 

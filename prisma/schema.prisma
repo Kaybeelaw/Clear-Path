@@ -39,33 +39,47 @@ model User {
   @@index([role])
 }
 
+model Department {
+  id   String @id @default(cuid())
+  name String @unique
+  code String?
+
+  students Student[]
+  officers Officer[]
+
+  @@index([name])
+}
+
 model Student {
-  id         String   @id @default(cuid())
-  userId     String   @unique
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  matricNo   String   @unique
-  faculty    String
-  department String
-  level      String
-  program    String
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  matricNo     String   @unique
+  faculty      String
+  departmentId String?
+  department   Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  level        String
+  program      String
 
   records   ClearanceRecord[]
   documents Document[]
 
   @@index([matricNo])
+  @@index([departmentId])
 }
 
 model Officer {
-  id        String   @id @default(cuid())
-  userId    String   @unique
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  stageCode String
-  stageName String
-  department String?
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stageCode    String
+  stageName    String
+  departmentId String?
+  department   Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
 
   items ClearanceItem[]
 
-  @@index([stageCode, department])
+  @@index([stageCode, departmentId])
 }
 
 model ClearanceRecord {
