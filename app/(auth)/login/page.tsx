@@ -5,8 +5,13 @@ import { ResetPasswordForm } from "@/components/reset-password-form";
 
 export const metadata: Metadata = { title: "Sign in" };
 
-export default function LoginPage({ searchParams }: { searchParams?: { token?: string } }) {
-  const token = searchParams?.token;
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ token?: string }>;
+}) {
+  const params = await searchParams;
+  const token = params?.token;
 
   if (token) {
     return (
