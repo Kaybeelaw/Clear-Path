@@ -4,13 +4,21 @@ import { hash, compare } from "bcryptjs";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { createSessionToken, SESSION_COOKIE, sessionCookieOptions } from "@/lib/auth";
+import {
+  createSessionToken,
+  SESSION_COOKIE,
+  sessionCookieOptions,
+  createPasswordResetToken,
+  verifyPasswordResetToken,
+} from "@/lib/auth";
 import { loginSchema, registerSchema } from "@/lib/validation";
 import { homeForRole } from "@/lib/session";
+import { sendPasswordResetEmail } from "@/lib/email";
 
 export type AuthFormState = {
   error?: string;
   fieldErrors?: Record<string, string[]>;
+  message?: string;
 };
 
 export async function registerAction(
@@ -109,4 +117,54 @@ export async function loginAction(
 export async function logoutAction(): Promise<void> {
   (await cookies()).delete(SESSION_COOKIE);
   redirect("/login");
+}
+
+// Request a password reset: creates a short-lived token and emails it to the user.
+export async function requestPasswordResetAction(
+  _prevState: AuthFormState,
+  formData: FormData,
+): Promise<AuthFormState> {
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  if (!email) return { error: "Please provide your email address." };
+
+  const user = await prisma.user.findUnique({ where: { email } });
+
+  // Always return success to avoid user enumeration.
+  if (!user) return { message: "If an account exists for that email, a reset link has been sent." };
+
+  try {
+    const token = await createPasswordResetToken(user.id, user.email);
+    await sendPasswordResetEmail(user.email, token);
+    return { message: "If an account exists for that email, a reset link has been sent." };
+  } catch (err) {
+    console.error("Failed to send password reset email:", err);
+    return { message: "If an account exists for that email, a reset link has been sent." };
+  }
+}
+
+// Perform the reset: verify token and set new password; then sign in the user.
+export async function resetPasswordAction(
+  _prevState: AuthFormState,
+  formData: FormData,
+): Promise<AuthFormState> {
+  const token = String(formData.get("token") ?? "").trim();
+  const newPassword = String(formData.get("password") ?? "").trim();
+
+  if (!token) return { error: "Invalid or missing token." };
+  if (newPassword.length < 8) return { error: "Password must be at least 8 characters." };
+
+  const verified = await verifyPasswordResetToken(token);
+  if (!verified) return { error: "Invalid or expired token." };
+
+  const user = await prisma.user.findUnique({ where: { id: verified.userId } });
+  if (!user) return { error: "User not found." };
+
+  const passwordHash = await hash(newPassword, 12);
+  await prisma.user.update({ where: { id: user.id }, data: { passwordHash } });
+
+  // Auto-login after reset
+  const sessionToken = await createSessionToken({ userId: user.id, email: user.email, role: user.role });
+  (await cookies()).set(SESSION_COOKIE, sessionToken, sessionCookieOptions);
+
+  redirect(homeForRole(user.role));
 }
