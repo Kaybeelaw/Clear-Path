@@ -20,7 +20,7 @@ export const registerSchema = z.object({
     .toUpperCase()
     .regex(/^[A-Z0-9/]+$/, "Matric number may only contain letters, numbers and '/'"),
   faculty: requiredText("Faculty"),
-  department: requiredText("Department"),
+  departmentId: z.string().min(1, "Select your department"),
   program: requiredText("Programme"),
   level: z.enum(["100", "200", "300", "400", "500"], { message: "Select your current level" }),
 });
@@ -48,4 +48,6 @@ export const createOfficerSchema = z.object({
   email,
   password,
   stageCode: z.enum(stageCodes, { message: "Select a clearance stage" }),
+  department: z.string().trim().min(2, "Department is required for department-stage officers").max(80).optional(),
+  departmentId: z.string().optional(),
 });

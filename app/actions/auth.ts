@@ -30,7 +30,7 @@ export async function registerAction(
     return { fieldErrors: parsed.error.flatten().fieldErrors };
   }
 
-  const { email, password, fullName, matricNo, faculty, department, program, level } = parsed.data;
+  const { email, password, fullName, matricNo, faculty, departmentId, program, level } = parsed.data;
 
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {
@@ -53,7 +53,7 @@ export async function registerAction(
           fullName,
           role: "STUDENT",
           student: {
-            create: { matricNo, faculty, department, program, level },
+                create: { matricNo, faculty, departmentId, program, level },
           },
         },
         include: { student: true },

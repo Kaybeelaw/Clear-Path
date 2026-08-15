@@ -261,7 +261,9 @@ async function main() {
 
   const officerByStage = new Map<StageCode, string>();
 
+  // Create non-department officers (one per stage)
   for (const stage of CLEARANCE_STAGES) {
+    if (stage.code === "department") continue; // create department officers per-department below
     const email = `${stage.code}@clearpath.edu`;
     const user = await prisma.user.create({
       data: {
@@ -275,7 +277,29 @@ async function main() {
     });
     officerByStage.set(stage.code, user.officer!.id);
   }
-  console.log(`Created ${CLEARANCE_STAGES.length} officer accounts (password: ${OFFICER_PASSWORD})`);
+  console.log(`Created ${CLEARANCE_STAGES.length - 1} non-department officer accounts (password: ${OFFICER_PASSWORD})`);
+
+  // Create departments from seed list and department-stage officers per department
+  const deptNames = Array.from(new Set(students.map((s) => s.department)));
+  const departmentMap = new Map<string, { id: string; name: string }>();
+  for (const name of deptNames) {
+    const dept = await prisma.department.create({ data: { name } });
+    departmentMap.set(name, { id: dept.id, name: dept.name });
+
+    // create a department-stage officer for this department
+    const email = `department+${dept.name.replace(/\s+/g, "").toLowerCase()}@clearpath.edu`;
+    const user = await prisma.user.create({
+      data: {
+        email,
+        passwordHash: await hash(OFFICER_PASSWORD, 12),
+        fullName: `Head of ${dept.name}`,
+        role: "OFFICER",
+        officer: { create: { stageCode: "department", stageName: "Department", departmentId: dept.id } },
+      },
+      include: { officer: true },
+    });
+    officerByStage.set("department", user.officer!.id);
+  }
 
   for (const [index, seed] of students.entries()) {
     const createdAt = new Date(Date.now() - (students.length - index) * 2 * 24 * 60 * 60 * 1000);
@@ -290,7 +314,7 @@ async function main() {
           create: {
             matricNo: seed.matricNo,
             faculty: seed.faculty,
-            department: seed.department,
+            departmentId: departmentMap.get(seed.department)?.id ?? null,
             program: seed.program,
             level: seed.level,
           },
