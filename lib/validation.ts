@@ -48,4 +48,5 @@ export const createOfficerSchema = z.object({
   email,
   password,
   stageCode: z.enum(stageCodes, { message: "Select a clearance stage" }),
+  department: z.string().trim().min(2, "Department is required for department-stage officers").max(80).optional(),
 });

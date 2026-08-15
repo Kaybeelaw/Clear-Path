@@ -6,8 +6,16 @@ import { Field, ErrorBanner, SuccessBanner, inputClass, submitClass } from "./ui
 
 const initialState: AdminFormState = {};
 
+import { useState } from "react";
+import { useActionState } from "react";
+import { createOfficerAction, type AdminFormState } from "@/app/actions/admin";
+import { Field, ErrorBanner, SuccessBanner, inputClass, submitClass } from "./ui";
+
+const initialState: AdminFormState = {};
+
 export function CreateOfficerForm({ availableStages }: { availableStages: { code: string; name: string }[] }) {
   const [state, formAction, isPending] = useActionState(createOfficerAction, initialState);
+  const [selectedStage, setSelectedStage] = useState<string>("");
 
   return (
     <form action={formAction} className="space-y-4">
@@ -35,7 +43,14 @@ export function CreateOfficerForm({ availableStages }: { availableStages: { code
       </Field>
 
       <Field label="Clearance stage" htmlFor="of-stage">
-        <select id="of-stage" name="stageCode" required defaultValue="" className={inputClass}>
+        <select
+          id="of-stage"
+          name="stageCode"
+          required
+          defaultValue=""
+          className={inputClass}
+          onChange={(e) => setSelectedStage(e.target.value)}
+        >
           <option value="" disabled>
             Select an unassigned stage
           </option>
@@ -46,6 +61,12 @@ export function CreateOfficerForm({ availableStages }: { availableStages: { code
           ))}
         </select>
       </Field>
+
+      {selectedStage === "department" && (
+        <Field label="Department" htmlFor="of-department">
+          <input id="of-department" name="department" required className={inputClass} placeholder="e.g. Computer Science" />
+        </Field>
+      )}
 
       <button type="submit" disabled={isPending} className={submitClass}>
         {isPending ? "Creating…" : "Create officer"}

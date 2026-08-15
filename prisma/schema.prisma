@@ -59,12 +59,13 @@ model Officer {
   id        String   @id @default(cuid())
   userId    String   @unique
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  stageCode String   @unique
+  stageCode String
   stageName String
+  department String?
 
   items ClearanceItem[]
 
-  @@index([stageCode])
+  @@index([stageCode, department])
 }
 
 model ClearanceRecord {

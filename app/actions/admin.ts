@@ -18,13 +18,20 @@ export async function createOfficerAction(
   const parsed = createOfficerSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid request." };
 
-  const { email, password, fullName, stageCode } = parsed.data;
+  const { email, password, fullName, stageCode, department } = parsed.data;
 
   const existingUser = await prisma.user.findUnique({ where: { email } });
   if (existingUser) return { error: "An account with this email already exists." };
 
-  const existingOfficer = await prisma.officer.findUnique({ where: { stageCode } });
-  if (existingOfficer) return { error: "This stage already has an assigned officer." };
+  // Validate uniqueness: for department stage, uniqueness is per-department; for other stages, department must be null and stage unique
+  if (stageCode === "department") {
+    if (!department) return { error: "Department is required for department-stage officers." };
+    const existingOfficer = await prisma.officer.findFirst({ where: { stageCode, department } });
+    if (existingOfficer) return { error: "An officer for this department already exists." };
+  } else {
+    const existingOfficer = await prisma.officer.findFirst({ where: { stageCode, department: null } });
+    if (existingOfficer) return { error: "This stage already has an assigned officer." };
+  }
 
   const passwordHash = await hash(password, 12);
 
@@ -35,7 +42,7 @@ export async function createOfficerAction(
       fullName,
       role: "OFFICER",
       officer: {
-        create: { stageCode, stageName: STAGE_BY_CODE[stageCode].name },
+        create: { stageCode, stageName: STAGE_BY_CODE[stageCode].name, department: department ?? null },
       },
     },
   });
