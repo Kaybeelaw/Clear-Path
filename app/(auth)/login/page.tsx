@@ -13,7 +13,6 @@ export default function LoginPage({ searchParams }: { searchParams?: { token?: s
       <div className="mx-auto w-full max-w-md px-6 py-12">
         <h1 className="mb-4 text-2xl font-bold">Reset your password</h1>
         <p className="mb-6 text-sm text-zinc-600">Set a new password for your account.</p>
-        {/* @ts-expect-error Server -> Client prop passing */}
         <ResetPasswordForm token={token} />
       </div>
     );

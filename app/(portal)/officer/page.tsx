@@ -23,7 +23,7 @@ export default async function OfficerPage() {
     },
     orderBy: { createdAt: "desc" },
     include: {
-      record: { include: { student: { include: { user: { select: { fullName: true } } } } } },
+      record: { include: { student: { include: { user: { select: { fullName: true } }, department: { select: { name: true } } } } } },
       documents: { orderBy: { createdAt: "asc" } },
     },
   });
