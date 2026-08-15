@@ -44,7 +44,7 @@ export function LoginForm() {
         </button>
       </div>
 
-      <div className="mt-2 text-right">
+      <div className="mt-2 text-center">
         <Link href="/forgot-password" className="text-sm text-zinc-600 hover:underline">
           Forgot password?
         </Link>
