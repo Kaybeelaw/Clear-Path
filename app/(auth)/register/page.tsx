@@ -6,7 +6,13 @@ import { prisma } from "@/lib/db";
 export const metadata: Metadata = { title: "Create an account" };
 
 export default async function RegisterPage() {
-  const departments = await prisma.department.findMany({ orderBy: { name: "asc" } });
+  const [faculties, departments] = await Promise.all([
+    prisma.faculty.findMany({ orderBy: { name: "asc" } }),
+    prisma.department.findMany({
+      orderBy: { name: "asc" },
+      select: { id: true, name: true, facultyId: true },
+    }),
+  ]);
 
   return (
     <div className="space-y-6">
@@ -17,12 +23,14 @@ export default async function RegisterPage() {
         </p>
       </div>
 
-      {/* @ts-expect-error Server -> Client prop passing */}
-      <RegisterForm departments={departments} />
+      <RegisterForm faculties={faculties} departments={departments} />
 
       <p className="text-center text-sm text-zinc-500 dark:text-zinc-400">
         Already have an account?{" "}
-        <Link href="/login" className="font-semibold text-indigo-600 hover:text-indigo-500 dark:text-indigo-400">
+        <Link
+          href="/login"
+          className="font-semibold text-indigo-600 hover:text-indigo-500 dark:text-indigo-400"
+        >
           Sign in
         </Link>
       </p>

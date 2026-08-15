@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useActionState } from "react";
 import { registerAction, type AuthFormState } from "@/app/actions/auth";
 import { Field, ErrorBanner, inputClass, submitClass } from "./ui";
@@ -8,8 +9,22 @@ const initialState: AuthFormState = {};
 
 const LEVELS = ["100", "200", "300", "400", "500"];
 
-export function RegisterForm({ departments }: { departments?: { id: string; name: string }[] }) {
+type Faculty = { id: string; name: string };
+type Department = { id: string; name: string; facultyId: string | null };
+
+export function RegisterForm({
+  faculties,
+  departments,
+}: {
+  faculties?: Faculty[];
+  departments?: Department[];
+}) {
   const [state, formAction, isPending] = useActionState(registerAction, initialState);
+  const [selectedFacultyId, setSelectedFacultyId] = useState<string>("");
+
+  const filteredDepartments = selectedFacultyId
+    ? (departments ?? []).filter((d) => d.facultyId === selectedFacultyId)
+    : (departments ?? []);
 
   return (
     <form action={formAction} className="space-y-4">
@@ -52,16 +67,41 @@ export function RegisterForm({ departments }: { departments?: { id: string; name
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Faculty" htmlFor="faculty" error={state.fieldErrors?.faculty?.[0]}>
-          <input id="faculty" name="faculty" required className={inputClass} placeholder="e.g. Science" />
+        <Field label="Faculty" htmlFor="facultyId" error={state.fieldErrors?.facultyId?.[0]}>
+          <select
+            id="facultyId"
+            name="facultyId"
+            required
+            defaultValue=""
+            className={inputClass}
+            onChange={(e) => {
+              setSelectedFacultyId(e.target.value);
+            }}
+          >
+            <option value="" disabled>
+              Select faculty
+            </option>
+            {faculties?.map((f) => (
+              <option key={f.id} value={f.id}>
+                {f.name}
+              </option>
+            ))}
+          </select>
         </Field>
 
-        <Field label="Department" htmlFor="department" error={state.fieldErrors?.departmentId?.[0]}>
-          <select id="department" name="departmentId" required className={inputClass} defaultValue="">
+        <Field label="Department" htmlFor="departmentId" error={state.fieldErrors?.departmentId?.[0]}>
+          <select
+            id="departmentId"
+            name="departmentId"
+            required
+            defaultValue=""
+            className={inputClass}
+            disabled={!selectedFacultyId}
+          >
             <option value="" disabled>
-              Select department
+              {selectedFacultyId ? "Select department" : "Select a faculty first"}
             </option>
-            {departments?.map((d) => (
+            {filteredDepartments.map((d) => (
               <option key={d.id} value={d.id}>
                 {d.name}
               </option>

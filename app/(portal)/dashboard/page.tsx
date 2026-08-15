@@ -17,6 +17,7 @@ export default async function DashboardPage() {
     where: { userId: session.userId },
     include: {
       user: { select: { fullName: true } },
+      department: { select: { name: true } },
       records: {
         orderBy: { createdAt: "desc" },
         take: 1,
@@ -51,7 +52,7 @@ export default async function DashboardPage() {
             Clearance progress
           </h1>
           <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-            {student.matricNo} · {student.program} · {student.department}
+            {student.matricNo} · {student.program} · {student.department?.name ?? "—"}
           </p>
         </div>
         <RecordStatusBadge status={record?.status ?? "IN_PROGRESS"} />

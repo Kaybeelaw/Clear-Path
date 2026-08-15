@@ -39,23 +39,51 @@ model User {
   @@index([role])
 }
 
+model Faculty {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  code        String?
+  createdAt   DateTime @default(now())
+
+  departments Department[]
+  students    Student[]
+
+  @@index([name])
+}
+
 model Department {
-  id   String @id @default(cuid())
-  name String @unique
-  code String?
+  id        String   @id @default(cuid())
+  name      String   @unique
+  code      String?
+  facultyId String?
+  faculty   Faculty? @relation(fields: [facultyId], references: [id], onDelete: SetNull)
 
   students Student[]
   officers Officer[]
 
   @@index([name])
+  @@index([facultyId])
+}
+
+model Stage {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  name        String
+  description String?
+  order       Int
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  @@index([order])
 }
 
 model Student {
-  id           String   @id @default(cuid())
-  userId       String   @unique
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  matricNo     String   @unique
-  faculty      String
+  id           String      @id @default(cuid())
+  userId       String      @unique
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  matricNo     String      @unique
+  facultyId    String?
+  faculty      Faculty?    @relation(fields: [facultyId], references: [id], onDelete: SetNull)
   departmentId String?
   department   Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
   level        String
@@ -66,12 +94,13 @@ model Student {
 
   @@index([matricNo])
   @@index([departmentId])
+  @@index([facultyId])
 }
 
 model Officer {
-  id           String   @id @default(cuid())
-  userId       String   @unique
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id           String      @id @default(cuid())
+  userId       String      @unique
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   stageCode    String
   stageName    String
   departmentId String?
@@ -97,18 +126,18 @@ model ClearanceRecord {
 }
 
 model ClearanceItem {
-  id         String         @id @default(cuid())
+  id         String          @id @default(cuid())
   recordId   String
   record     ClearanceRecord @relation(fields: [recordId], references: [id], onDelete: Cascade)
   stageCode  String
   stageName  String
   stageOrder Int
-  status     StageStatus    @default(PENDING)
+  status     StageStatus     @default(PENDING)
   officerId  String?
-  officer    Officer?       @relation(fields: [officerId], references: [id], onDelete: SetNull)
+  officer    Officer?        @relation(fields: [officerId], references: [id], onDelete: SetNull)
   comment    String?
   actedAt    DateTime?
-  createdAt  DateTime       @default(now())
+  createdAt  DateTime        @default(now())
 
   @@unique([recordId, stageCode])
   @@index([stageCode, status])

@@ -68,7 +68,7 @@ export default async function OfficerPage() {
                       {item.record.student.user.fullName}
                     </p>
                     <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                      {item.record.student.matricNo} · {item.record.student.department} ·{" "}
+                      {item.record.student.matricNo} · {item.record.student.department?.name ?? "—"} ·{" "}
                       {item.record.student.program}
                     </p>
                   </div>

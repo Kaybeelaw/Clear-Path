@@ -1,48 +1,25 @@
-export const CLEARANCE_STAGES = [
-  {
-    code: "department",
-    name: "Department",
-    description: "Sign-off from your Head of Department confirming programme completion.",
-  },
-  {
-    code: "library",
-    name: "Library",
-    description: "Confirmation that all library materials have been returned.",
-  },
-  {
-    code: "bursary",
-    name: "Bursary / Finance",
-    description: "Confirmation that there are no outstanding financial obligations.",
-  },
-  {
-    code: "hostel",
-    name: "Hostel",
-    description: "Confirmation that hostel accommodation has been vacated.",
-  },
-  {
-    code: "sports",
-    name: "Sports",
-    description: "Return of any sports equipment and clearance of dues.",
-  },
-  {
-    code: "security",
-    name: "Security",
-    description: "Confirmation of no pending security issues with the institution.",
-  },
-  {
-    code: "ict",
-    name: "ICT",
-    description: "Closure of institutional accounts and return of ICT assets.",
-  },
-] as const;
+import { prisma } from "./db";
 
-export type StageCode = (typeof CLEARANCE_STAGES)[number]["code"];
-export type StageDefinition = (typeof CLEARANCE_STAGES)[number];
+export type StageCode = string;
 
-export const STAGE_BY_CODE: Record<StageCode, StageDefinition> = Object.fromEntries(
-  CLEARANCE_STAGES.map((stage) => [stage.code, stage]),
-) as Record<StageCode, StageDefinition>;
+export type StageDefinition = {
+  id: string;
+  code: string;
+  name: string;
+  description: string | null;
+  order: number;
+  isActive: boolean;
+};
 
-export function stageName(code: string): string {
-  return STAGE_BY_CODE[code as StageCode]?.name ?? code;
+/** Fetch all active clearance stages from the database, ordered by their display order. */
+export async function getStages(): Promise<StageDefinition[]> {
+  return prisma.stage.findMany({
+    where: { isActive: true },
+    orderBy: { order: "asc" },
+  });
+}
+
+/** Look up the display name for a stage code from a pre-fetched stages array. */
+export function stageName(code: string, stages: StageDefinition[]): string {
+  return stages.find((s) => s.code === code)?.name ?? code;
 }

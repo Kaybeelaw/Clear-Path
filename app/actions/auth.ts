@@ -14,6 +14,7 @@ import {
 import { loginSchema, registerSchema } from "@/lib/validation";
 import { homeForRole } from "@/lib/session";
 import { sendPasswordResetEmail } from "@/lib/email";
+import { getStages } from "@/lib/stages";
 
 export type AuthFormState = {
   error?: string;
@@ -30,7 +31,7 @@ export async function registerAction(
     return { fieldErrors: parsed.error.flatten().fieldErrors };
   }
 
-  const { email, password, fullName, matricNo, faculty, departmentId, program, level } = parsed.data;
+  const { email, password, fullName, matricNo, facultyId, departmentId, program, level } = parsed.data;
 
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {
@@ -40,6 +41,12 @@ export async function registerAction(
   const existingMatric = await prisma.student.findUnique({ where: { matricNo } });
   if (existingMatric) {
     return { error: "This matriculation number is already registered." };
+  }
+
+  // Fetch active stages before the transaction so we can build the clearance items
+  const stages = await getStages();
+  if (stages.length === 0) {
+    return { error: "No clearance stages have been configured yet. Please contact the administration office." };
   }
 
   const passwordHash = await hash(password, 12);
@@ -53,7 +60,7 @@ export async function registerAction(
           fullName,
           role: "STUDENT",
           student: {
-                create: { matricNo, faculty, departmentId, program, level },
+            create: { matricNo, facultyId, departmentId, program, level },
           },
         },
         include: { student: true },
@@ -64,15 +71,11 @@ export async function registerAction(
         data: {
           studentId: user.student.id,
           items: {
-            create: [
-              { stageCode: "department", stageName: "Department", stageOrder: 1 },
-              { stageCode: "library", stageName: "Library", stageOrder: 2 },
-              { stageCode: "bursary", stageName: "Bursary / Finance", stageOrder: 3 },
-              { stageCode: "hostel", stageName: "Hostel", stageOrder: 4 },
-              { stageCode: "sports", stageName: "Sports", stageOrder: 5 },
-              { stageCode: "security", stageName: "Security", stageOrder: 6 },
-              { stageCode: "ict", stageName: "ICT", stageOrder: 7 },
-            ],
+            create: stages.map((stage) => ({
+              stageCode: stage.code,
+              stageName: stage.name,
+              stageOrder: stage.order,
+            })),
           },
         },
       });

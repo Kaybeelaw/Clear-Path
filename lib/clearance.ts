@@ -1,15 +1,16 @@
-import { CLEARANCE_STAGES } from "./stages";
+import { getStages } from "./stages";
 import { prisma } from "./db";
 
 export async function createClearanceRecord(studentId: string): Promise<void> {
+  const stages = await getStages();
   await prisma.clearanceRecord.create({
     data: {
       studentId,
       items: {
-        create: CLEARANCE_STAGES.map((stage, index) => ({
+        create: stages.map((stage) => ({
           stageCode: stage.code,
           stageName: stage.name,
-          stageOrder: index + 1,
+          stageOrder: stage.order,
         })),
       },
     },
